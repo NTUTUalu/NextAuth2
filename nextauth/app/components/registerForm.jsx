@@ -2,13 +2,18 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import {useRouter} from "next/navigation";
 
 export default function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-const handleSubmit = (e) => {
+
+  //we will use router to go to another page after successful signup
+  const router = useRouter();
+
+const handleSubmit = async (e) => {
     e.preventDefault();
 
     if(!name || !email || !password) {
@@ -16,10 +21,46 @@ const handleSubmit = (e) => {
         return;
     }
 
+    try {
+        const resUserExists = await fetch("api/userExists", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({email}),
+        })
+        const {user} = await resUserExists.json();
+        
+        if(user) {
+            setError("User already exists.");
+            return;
+        }
+
+       const res = await fetch("api/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name,email, password
+            })
+        });
+
+        if (res.ok) {
+            const form = e.target;
+            form.reset();
+            router.push("/");
+        } else {
+            console.log("User registration failed.");
+        }
+    }catch(error) {
+        console.log("Error during registration: ", error);
+    }
+
 };
-    console.log("Name: ", name);
-    console.log("Name: ", email);
-    console.log("Name: ", password);
+    // console.log("Name: ", name);
+    // console.log("Email: ", email);
+    // console.log("Password: ", password);
 
  
 
